@@ -1,4 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
+// Copyright 2026 alibaba/open-code-review Contributors
+
+// SPDX-License-Identifier: Apache-2.0
 
 package dashboard
 
@@ -15,9 +18,9 @@ import (
 type GitLabMREvent struct {
 	ObjectKind string `json:"object_kind"` // "merge_request"
 	Project    struct {
-		ID        int64  `json:"id"`
-		WebURL    string `json:"web_url"`
-		PathNS    string `json:"path_with_namespace"`
+		ID     int64  `json:"id"`
+		WebURL string `json:"web_url"`
+		PathNS string `json:"path_with_namespace"`
 	} `json:"project"`
 	ObjectAttributes struct {
 		IID          int64  `json:"iid"`

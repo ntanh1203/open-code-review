@@ -1,4 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
+// Copyright 2026 alibaba/open-code-review Contributors
+
+// SPDX-License-Identifier: Apache-2.0
 
 package dashboard
 
@@ -40,27 +43,27 @@ type Review struct {
 	FinishedAt    *time.Time `json:"finished_at,omitempty"`
 
 	// Joined fields (not in DB directly).
-	RepoName string     `json:"repo_name,omitempty"`
-	Comments []*Comment `json:"comments,omitempty"`
+	RepoName string       `json:"repo_name,omitempty"`
+	Comments []*Comment   `json:"comments,omitempty"`
 	Runs     []*ReviewRun `json:"runs,omitempty"`
 }
 
 // Comment is a single review finding.
 type Comment struct {
-	ID               int64      `json:"id"`
-	ReviewID         int64      `json:"review_id"`
-	Path             string     `json:"path"`
-	Content          string     `json:"content"`
-	StartLine        int        `json:"start_line"`
-	EndLine          int        `json:"end_line"`
-	Category         string     `json:"category"`  // bug/security/performance/maintainability/test/style/documentation/other
-	Severity         string     `json:"severity"`  // critical/high/medium/low
-	SuggestionCode   string     `json:"suggestion_code,omitempty"`
-	ExistingCode     string     `json:"existing_code,omitempty"`
-	Status           string     `json:"status"` // open/fixed/intentional
-	IntentionalReason string   `json:"intentional_reason,omitempty"`
-	ResolvedBy       string     `json:"resolved_by,omitempty"`
-	ResolvedAt       *time.Time `json:"resolved_at,omitempty"`
+	ID                int64      `json:"id"`
+	ReviewID          int64      `json:"review_id"`
+	Path              string     `json:"path"`
+	Content           string     `json:"content"`
+	StartLine         int        `json:"start_line"`
+	EndLine           int        `json:"end_line"`
+	Category          string     `json:"category"` // bug/security/performance/maintainability/test/style/documentation/other
+	Severity          string     `json:"severity"` // critical/high/medium/low
+	SuggestionCode    string     `json:"suggestion_code,omitempty"`
+	ExistingCode      string     `json:"existing_code,omitempty"`
+	Status            string     `json:"status"` // open/fixed/intentional
+	IntentionalReason string     `json:"intentional_reason,omitempty"`
+	ResolvedBy        string     `json:"resolved_by,omitempty"`
+	ResolvedAt        *time.Time `json:"resolved_at,omitempty"`
 }
 
 // ReviewRun tracks each re-review iteration.
@@ -94,11 +97,11 @@ type ReviewJob struct {
 
 // OCROutput mirrors the top-level JSON from `ocr review --format json`.
 type OCROutput struct {
-	Status   string     `json:"status"`
-	LLM      OCRLLM     `json:"llm"`
-	Summary  OCRSummary `json:"summary"`
-	Comments []OCRComment `json:"comments"`
-	SessionID string    `json:"session_id"`
+	Status    string       `json:"status"`
+	LLM       OCRLLM       `json:"llm"`
+	Summary   OCRSummary   `json:"summary"`
+	Comments  []OCRComment `json:"comments"`
+	SessionID string       `json:"session_id"`
 }
 
 // OCRLLM holds provider info.
@@ -129,15 +132,15 @@ type OCRComment struct {
 
 // Stats aggregates dashboard statistics.
 type Stats struct {
-	TotalReviews   int              `json:"total_reviews"`
-	TotalComments  int              `json:"total_comments"`
-	OpenComments   int              `json:"open_comments"`
-	FixedComments  int              `json:"fixed_comments"`
-	IntentionalComments int         `json:"intentional_comments"`
-	SeverityCounts map[string]int   `json:"severity_counts"`
-	CategoryCounts map[string]int   `json:"category_counts"`
-	TopFiles       []FileStats      `json:"top_files"`
-	MemberActivity []MemberStats    `json:"member_activity"`
+	TotalReviews        int            `json:"total_reviews"`
+	TotalComments       int            `json:"total_comments"`
+	OpenComments        int            `json:"open_comments"`
+	FixedComments       int            `json:"fixed_comments"`
+	IntentionalComments int            `json:"intentional_comments"`
+	SeverityCounts      map[string]int `json:"severity_counts"`
+	CategoryCounts      map[string]int `json:"category_counts"`
+	TopFiles            []FileStats    `json:"top_files"`
+	MemberActivity      []MemberStats  `json:"member_activity"`
 }
 
 // FileStats tracks issues per file.
@@ -148,7 +151,7 @@ type FileStats struct {
 
 // MemberStats tracks member actions.
 type MemberStats struct {
-	Name            string `json:"name"`
-	FixedCount      int    `json:"fixed_count"`
-	IntentionalCount int   `json:"intentional_count"`
+	Name             string `json:"name"`
+	FixedCount       int    `json:"fixed_count"`
+	IntentionalCount int    `json:"intentional_count"`
 }

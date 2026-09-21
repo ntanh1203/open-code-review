@@ -1,4 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
+// Copyright 2026 alibaba/open-code-review Contributors
+
+// SPDX-License-Identifier: Apache-2.0
 
 package dashboard
 
@@ -15,9 +18,9 @@ import (
 
 // Worker processes review jobs sequentially.
 type Worker struct {
-	db    *DB
-	queue chan ReviewJob
-	wg    sync.WaitGroup
+	db     *DB
+	queue  chan ReviewJob
+	wg     sync.WaitGroup
 	ocrBin string // path to ocr binary; empty = "ocr" from PATH
 }
 
