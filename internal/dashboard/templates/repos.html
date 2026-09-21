@@ -1,0 +1,47 @@
+{{template "layout" .}}
+{{define "content"}}
+<h1>Repositories</h1>
+
+{{if .Repos}}
+<div class="card-grid">
+  {{range .Repos}}
+  <a href="/repo/{{.ID}}" class="card">
+    <h3>{{.ProjectName}}</h3>
+    <p class="muted">{{.GitLabURL}}</p>
+    <p class="muted">Default branch: {{.DefaultBranch}}</p>
+  </a>
+  {{end}}
+</div>
+{{else}}
+<p class="muted">No repositories configured yet.</p>
+{{end}}
+
+<h2>Add Repository</h2>
+<form id="add-repo-form" class="form-card" onsubmit="return addRepo(event)">
+  <div class="form-row">
+    <label>GitLab URL</label>
+    <input name="gitlab_url" type="url" placeholder="https://gitlab.mebisoft.vn" required>
+  </div>
+  <div class="form-row">
+    <label>Project ID</label>
+    <input name="project_id" type="number" placeholder="123" required>
+  </div>
+  <div class="form-row">
+    <label>Project Name (path)</label>
+    <input name="project_name" placeholder="group/project-name" required>
+  </div>
+  <div class="form-row">
+    <label>Clone Path (optional)</label>
+    <input name="clone_path" placeholder="/data/repos/project-name">
+  </div>
+  <div class="form-row">
+    <label>Default Branch</label>
+    <input name="default_branch" placeholder="develop" value="develop">
+  </div>
+  <div class="form-row">
+    <label>API Token</label>
+    <input name="api_token" type="password" required>
+  </div>
+  <button type="submit" class="btn btn-primary">Add Repository</button>
+</form>
+{{end}}

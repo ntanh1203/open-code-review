@@ -1,0 +1,81 @@
+{{template "layout" .}}
+{{define "content"}}
+<h1>Statistics</h1>
+
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-value">{{.Stats.TotalReviews}}</div>
+    <div class="stat-label">Total Reviews</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{.Stats.TotalComments}}</div>
+    <div class="stat-label">Total Comments</div>
+  </div>
+  <div class="stat-card open">
+    <div class="stat-value">{{.Stats.OpenComments}}</div>
+    <div class="stat-label">Open</div>
+  </div>
+  <div class="stat-card fixed">
+    <div class="stat-value">{{.Stats.FixedComments}}</div>
+    <div class="stat-label">Fixed</div>
+  </div>
+  <div class="stat-card intentional">
+    <div class="stat-value">{{.Stats.IntentionalComments}}</div>
+    <div class="stat-label">Intentional</div>
+  </div>
+</div>
+
+<div class="stats-row">
+  <div class="stats-section">
+    <h2>Severity Distribution</h2>
+    <div class="bar-chart">
+      {{range $k, $v := .Stats.SeverityCounts}}
+      <div class="bar-item">
+        <span class="bar-label">{{$k}}</span>
+        <div class="bar" style="width:{{$v}}px; max-width:100%; background:{{severityColor $k}}">{{$v}}</div>
+      </div>
+      {{end}}
+    </div>
+  </div>
+
+  <div class="stats-section">
+    <h2>Category Distribution</h2>
+    <div class="bar-chart">
+      {{range $k, $v := .Stats.CategoryCounts}}
+      <div class="bar-item">
+        <span class="bar-label">{{$k}}</span>
+        <div class="bar" style="width:{{$v}}px; max-width:100%;">{{$v}}</div>
+      </div>
+      {{end}}
+    </div>
+  </div>
+</div>
+
+{{if .Stats.TopFiles}}
+<h2>Top Files with Issues</h2>
+<table class="data-table">
+  <thead><tr><th>File</th><th>Issues</th></tr></thead>
+  <tbody>
+    {{range .Stats.TopFiles}}
+    <tr><td><code>{{.Path}}</code></td><td>{{.Count}}</td></tr>
+    {{end}}
+  </tbody>
+</table>
+{{end}}
+
+{{if .Stats.MemberActivity}}
+<h2>Member Activity</h2>
+<table class="data-table">
+  <thead><tr><th>Member</th><th>Fixed</th><th>Intentional</th></tr></thead>
+  <tbody>
+    {{range .Stats.MemberActivity}}
+    <tr>
+      <td>{{.Name}}</td>
+      <td><span class="count fixed-count">{{.FixedCount}}</span></td>
+      <td><span class="count intentional-count">{{.IntentionalCount}}</span></td>
+    </tr>
+    {{end}}
+  </tbody>
+</table>
+{{end}}
+{{end}}

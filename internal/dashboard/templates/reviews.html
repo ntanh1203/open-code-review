@@ -1,0 +1,78 @@
+{{template "layout" .}}
+{{define "content"}}
+<div class="breadcrumb">
+  <a href="/">Repos</a> / <strong>{{.Repo.ProjectName}}</strong>
+</div>
+
+<h1>{{.Repo.ProjectName}} - Reviews</h1>
+
+<div class="toolbar">
+  <button class="btn btn-primary" onclick="showTriggerForm()">Trigger Review</button>
+</div>
+
+<div id="trigger-form" class="form-card" style="display:none">
+  <h3>Manual Review Trigger</h3>
+  <form onsubmit="return triggerReview(event, {{.Repo.ID}})">
+    <div class="form-row">
+      <label>Source Branch</label>
+      <input name="source_branch" placeholder="feature/my-branch" required>
+    </div>
+    <div class="form-row">
+      <label>Target Branch</label>
+      <input name="target_branch" placeholder="{{.Repo.DefaultBranch}}" value="{{.Repo.DefaultBranch}}">
+    </div>
+    <div class="form-row">
+      <label>MR IID (optional)</label>
+      <input name="mr_iid" type="number" placeholder="42">
+    </div>
+    <div class="form-row">
+      <label>Your Name</label>
+      <input name="author" placeholder="username">
+    </div>
+    <button type="submit" class="btn btn-primary">Start Review</button>
+    <button type="button" class="btn btn-secondary" onclick="hideTriggerForm()">Cancel</button>
+  </form>
+</div>
+
+{{if .Reviews}}
+<table class="data-table">
+  <thead>
+    <tr>
+      <th>MR</th>
+      <th>Branch</th>
+      <th>Author</th>
+      <th>Status</th>
+      <th>Critical</th>
+      <th>High</th>
+      <th>Medium</th>
+      <th>Low</th>
+      <th>Files</th>
+      <th>Trigger</th>
+      <th>Date</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{range .Reviews}}
+    <tr onclick="window.location='/repo/{{$.Repo.ID}}/review/{{.ID}}'" class="clickable-row">
+      <td>
+        {{if .MRURL}}<a href="{{.MRURL}}" target="_blank" onclick="event.stopPropagation()">!{{.MRIID}}</a>{{else}}#{{.ID}}{{end}}
+        {{if .MRTitle}}<br><small class="muted">{{.MRTitle}}</small>{{end}}
+      </td>
+      <td><code>{{.SourceBranch}}</code> &rarr; <code>{{.TargetBranch}}</code></td>
+      <td>{{.Author}}</td>
+      <td><span class="badge" style="background:{{statusColor .Status}}">{{.Status}}</span></td>
+      <td>{{if gt .CriticalCount 0}}<span class="count critical">{{.CriticalCount}}</span>{{else}}-{{end}}</td>
+      <td>{{if gt .HighCount 0}}<span class="count high">{{.HighCount}}</span>{{else}}-{{end}}</td>
+      <td>{{if gt .MediumCount 0}}<span class="count medium">{{.MediumCount}}</span>{{else}}-{{end}}</td>
+      <td>{{if gt .LowCount 0}}<span class="count low">{{.LowCount}}</span>{{else}}-{{end}}</td>
+      <td>{{.FilesReviewed}}</td>
+      <td>{{.TriggeredBy}}</td>
+      <td>{{.CreatedAt.Format "2006-01-02 15:04"}}</td>
+    </tr>
+    {{end}}
+  </tbody>
+</table>
+{{else}}
+<p class="muted">No reviews yet. Configure a GitLab webhook or trigger a manual review.</p>
+{{end}}
+{{end}}

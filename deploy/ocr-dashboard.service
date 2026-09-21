@@ -1,0 +1,16 @@
+[Unit]
+Description=OCR Review Dashboard
+After=network.target
+
+[Service]
+Type=simple
+User=ocr
+Group=ocr
+WorkingDirectory=/opt/ocr-dashboard
+ExecStart=/opt/ocr-dashboard/dashboard --addr 0.0.0.0:8080 --db /opt/ocr-dashboard/data/dashboard.db --ocr-bin /usr/local/bin/ocr
+Restart=on-failure
+RestartSec=5
+Environment=HOME=/opt/ocr-dashboard
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,147 @@
+{{template "layout" .}}
+{{define "content"}}
+<div class="breadcrumb">
+  <a href="/">Repos</a> /
+  <a href="/repo/{{.RepoID}}">{{.Review.RepoName}}</a> /
+  <strong>Review #{{.Review.ID}}</strong>
+</div>
+
+<div class="review-header">
+  <div class="review-title">
+    <h1>
+      {{if .Review.MRURL}}<a href="{{.Review.MRURL}}" target="_blank">!{{.Review.MRIID}}</a>{{end}}
+      {{.Review.MRTitle}}
+    </h1>
+    <p><code>{{.Review.SourceBranch}}</code> &rarr; <code>{{.Review.TargetBranch}}</code> by <strong>{{.Review.Author}}</strong></p>
+  </div>
+  <div class="review-meta">
+    <span class="badge" style="background:{{statusColor .Review.Status}}">{{.Review.Status}}</span>
+    <span>{{.Review.FilesReviewed}} files reviewed</span>
+  </div>
+</div>
+
+<div class="progress-bar-container">
+  <div class="progress-info">
+    <span>{{add .Fixed .Intentional}} / {{.Total}} resolved</span>
+    <span>{{.Open}} open</span>
+  </div>
+  <div class="progress-bar">
+    <div class="progress-fixed" style="width:{{pct .Fixed .Total}}%"></div>
+    <div class="progress-intentional" style="width:{{pct .Intentional .Total}}%"></div>
+  </div>
+  <div class="progress-legend">
+    <span class="legend-item"><span class="dot fixed"></span> Fixed ({{.Fixed}})</span>
+    <span class="legend-item"><span class="dot intentional"></span> Intentional ({{.Intentional}})</span>
+    <span class="legend-item"><span class="dot open"></span> Open ({{.Open}})</span>
+  </div>
+</div>
+
+<div class="toolbar">
+  <div class="severity-tabs">
+    <a href="?severity=" class="tab {{if eq .SeverityFilter ""}}active{{end}}">All ({{.Total}})</a>
+    <a href="?severity=critical" class="tab {{if eq .SeverityFilter "critical"}}active{{end}}">Critical ({{.Review.CriticalCount}})</a>
+    <a href="?severity=high" class="tab {{if eq .SeverityFilter "high"}}active{{end}}">High ({{.Review.HighCount}})</a>
+    <a href="?severity=medium" class="tab {{if eq .SeverityFilter "medium"}}active{{end}}">Medium ({{.Review.MediumCount}})</a>
+    <a href="?severity=low" class="tab {{if eq .SeverityFilter "low"}}active{{end}}">Low ({{.Review.LowCount}})</a>
+  </div>
+  <button class="btn btn-primary" onclick="reReview({{.Review.ID}})">Re-Review</button>
+</div>
+
+<div class="comments-list">
+  {{range .Comments}}
+  {{if or (eq $.SeverityFilter "") (eq $.SeverityFilter .Severity)}}
+  <div class="comment-card {{.Status}}" id="comment-{{.ID}}">
+    <div class="comment-header">
+      <div class="comment-location">
+        <span class="badge severity" style="background:{{severityColor .Severity}}">{{.Severity}}</span>
+        <span class="badge category">{{.Category}}</span>
+        <code class="file-path">{{.Path}}{{if gt .StartLine 0}}:{{.StartLine}}{{if and (gt .EndLine 0) (ne .EndLine .StartLine)}}-{{.EndLine}}{{end}}{{end}}</code>
+      </div>
+      <div class="comment-status">
+        {{if eq .Status "fixed"}}
+          <span class="status-badge fixed">Fixed by {{.ResolvedBy}}</span>
+        {{else if eq .Status "intentional"}}
+          <span class="status-badge intentional" title="{{.IntentionalReason}}">Intentional by {{.ResolvedBy}}</span>
+        {{else}}
+          <span class="status-badge open">Open</span>
+        {{end}}
+      </div>
+    </div>
+
+    <div class="comment-body">
+      <p>{{.Content}}</p>
+    </div>
+
+    {{if or .ExistingCode .SuggestionCode}}
+    <div class="code-diff">
+      {{if .ExistingCode}}
+      <div class="code-block existing">
+        <div class="code-label">Current Code</div>
+        <pre><code>{{.ExistingCode}}</code></pre>
+      </div>
+      {{end}}
+      {{if .SuggestionCode}}
+      <div class="code-block suggestion">
+        <div class="code-label">Suggested Fix</div>
+        <pre><code>{{.SuggestionCode}}</code></pre>
+      </div>
+      {{end}}
+    </div>
+    {{end}}
+
+    {{if eq .Status "intentional"}}
+    <div class="intentional-reason">
+      <strong>Reason:</strong> {{.IntentionalReason}}
+    </div>
+    {{end}}
+
+    {{if eq .Status "open"}}
+    <div class="comment-actions">
+      <button class="btn btn-success btn-sm" onclick="markFixed({{.ID}})">Fixed</button>
+      <button class="btn btn-warning btn-sm" onclick="openIntentionalModal({{.ID}})">Intentional</button>
+    </div>
+    {{end}}
+  </div>
+  {{end}}
+  {{end}}
+</div>
+
+{{if .Runs}}
+<h2>Review History</h2>
+<table class="data-table">
+  <thead>
+    <tr><th>Run</th><th>Status</th><th>Comments</th><th>Open</th><th>Date</th></tr>
+  </thead>
+  <tbody>
+    {{range .Runs}}
+    <tr>
+      <td>#{{.RunNumber}}</td>
+      <td><span class="badge" style="background:{{statusColor .Status}}">{{.Status}}</span></td>
+      <td>{{.CommentsCount}}</td>
+      <td>{{.OpenCount}}</td>
+      <td>{{.CreatedAt.Format "2006-01-02 15:04"}}</td>
+    </tr>
+    {{end}}
+  </tbody>
+</table>
+{{end}}
+
+{{if .Audit}}
+<h2>Audit Log</h2>
+<table class="data-table">
+  <thead>
+    <tr><th>Action</th><th>Actor</th><th>Detail</th><th>Date</th></tr>
+  </thead>
+  <tbody>
+    {{range .Audit}}
+    <tr>
+      <td><span class="badge">{{.Action}}</span></td>
+      <td>{{.Actor}}</td>
+      <td>{{.Detail}}</td>
+      <td>{{.CreatedAt.Format "2006-01-02 15:04:05"}}</td>
+    </tr>
+    {{end}}
+  </tbody>
+</table>
+{{end}}
+{{end}}
