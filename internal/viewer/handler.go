@@ -14,6 +14,10 @@ import (
 )
 
 func handleRepos(w http.ResponseWriter, r *http.Request, root string) {
+	handleReposWithToken(w, r, root, "")
+}
+
+func handleReposWithToken(w http.ResponseWriter, r *http.Request, root, token string) {
 	if r.URL.Path != "/" {
 		http.NotFound(w, r)
 		return
@@ -26,7 +30,8 @@ func handleRepos(w http.ResponseWriter, r *http.Request, root string) {
 	}
 
 	renderTemplate(w, "repos.html", map[string]any{
-		"Repos": repos,
+		"Repos":       repos,
+		"ViewerToken": token,
 	})
 }
 
@@ -63,6 +68,7 @@ type sessionPageData struct {
 	EncodedRepo string
 	RepoName    string
 	Session     *ViewSession
+	ViewerToken string
 
 	// Static marks a render destined for a standalone file rather than the
 	// live server. It inlines the two /static/ assets below and turns the
@@ -75,6 +81,10 @@ type sessionPageData struct {
 }
 
 func handleSession(w http.ResponseWriter, r *http.Request, root, repo, sessionID string) {
+	handleSessionWithToken(w, r, root, repo, sessionID, "")
+}
+
+func handleSessionWithToken(w http.ResponseWriter, r *http.Request, root, repo, sessionID, token string) {
 	vs, err := LoadSession(root, repo, sessionID)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Failed to load session: %v", err), http.StatusNotFound)
@@ -91,6 +101,7 @@ func handleSession(w http.ResponseWriter, r *http.Request, root, repo, sessionID
 		EncodedRepo: repo,
 		RepoName:    name,
 		Session:     vs,
+		ViewerToken: token,
 	})
 }
 

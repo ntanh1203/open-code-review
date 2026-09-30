@@ -4,6 +4,7 @@
 package viewer
 
 import (
+	"context"
 	"embed"
 	"fmt"
 	"html/template"
@@ -16,7 +17,7 @@ import (
 	"time"
 )
 
-//go:embed templates/*.html static/style.css static/pager.js static/a11y.js static/session.js static/repos.js static/sessions.js static/icons/*.svg
+//go:embed templates/*.html static/style.css static/pager.js static/a11y.js static/session.js static/repos.js static/review-form.js static/finding-language.js static/sessions.js static/icons/*.svg
 var assets embed.FS
 
 // iconNameRE guards the icon() template helper: names are hard-coded in
@@ -48,7 +49,9 @@ func StartServer(addr, openMode string) error {
 		return fmt.Errorf("resolve sessions root: %w", err)
 	}
 
-	mux := newMux(root)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	mux := newMuxWithContext(root, ctx)
 
 	// Wrap the mux with a Host-header allowlist. Without this, any web page
 	// the user visits can DNS-rebind its origin to 127.0.0.1 and read the
@@ -111,14 +114,26 @@ func StartServer(addr, openMode string) error {
 // New routes must register method-qualified patterns to keep this contract
 // testable (TestMux_HasNoWriteRoutes).
 func newMux(root string) *http.ServeMux {
+	return newMuxWithContext(root, context.Background())
+}
+
+func newMuxWithContext(root string, ctx context.Context) *http.ServeMux {
 	mux := http.NewServeMux()
+	jobs := newReviewJobs(root)
+	jobs.ctx = ctx
+	mux.HandleFunc("POST /api/reviews", jobs.serve)
+	mux.HandleFunc("POST /api/pick-folder", jobs.pickFolder)
+	mux.HandleFunc("POST /api/branches", jobs.branches)
+	mux.HandleFunc("POST /api/translate", jobs.translateFinding)
+	mux.HandleFunc("GET /api/reviews", jobs.serve)
+	mux.HandleFunc("GET /api/reviews/{id}", jobs.serve)
 
 	// Static assets.
 	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.FS(staticFS()))))
 
 	// Routes
 	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
-		handleRepos(w, r, root)
+		handleReposWithToken(w, r, root, jobs.token)
 	})
 	mux.HandleFunc("GET /r/{repo}", func(w http.ResponseWriter, r *http.Request) {
 		repo := r.PathValue("repo")
@@ -145,7 +160,7 @@ func newMux(root string) *http.ServeMux {
 			http.Error(w, "invalid path", http.StatusBadRequest)
 			return
 		}
-		handleSession(w, r, root, repo, sid)
+		handleSessionWithToken(w, r, root, repo, sid, jobs.token)
 	})
 
 	return mux

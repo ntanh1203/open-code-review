@@ -15,6 +15,7 @@
         {{if not $.Static}}<a class="back-link" href="/r/{{.EncodedRepo}}" aria-label="Back to sessions">{{icon "chevron-left"}}</a>{{end}}
         <h2>Session: {{.Session.Summary.SessionID}}</h2>
     </div>
+    {{if not $.Static}}<div id="finding-language" data-repo="{{.EncodedRepo}}" data-session="{{.Session.Summary.SessionID}}" data-token="{{.ViewerToken}}"><button type="button" data-finding-language="vi" aria-pressed="true">Ti&#7871;ng Vi&#7879;t</button> <button type="button" data-finding-language="en" aria-pressed="false">English</button><span id="finding-translation-status" role="status" aria-live="polite"></span></div>{{end}}
     <div class="meta">
         <span class="meta-truncate" title="{{.Session.Summary.CWD}}"><strong>CWD:</strong> {{.Session.Summary.CWD}}</span>
         <span class="meta-truncate" title="{{.Session.Summary.GitBranch}}"><strong>Branch:</strong> {{.Session.Summary.GitBranch}}</span>
@@ -167,7 +168,7 @@
                     {{if .StartLine}}<span class="comment-lines{{if $numbered}} sr-only{{end}}">L{{.StartLine}}{{if and .EndLine (ne .EndLine .StartLine)}}-L{{.EndLine}}{{end}}</span>{{end}}
                     <span class="comment-badge mark-chip" data-mark-chip hidden></span>
                 </div>
-                <div class="comment-content">{{.Content}}</div>
+                <div class="comment-content" data-finding-id="{{.MarkID}}" data-original="{{.Content}}">{{.Content}}</div>
                 {{if or .ExistingCode .SuggestionCode}}
                 <div class="comment-code-diff">
                     {{if .ExistingCode}}
@@ -255,7 +256,7 @@
 </details>
 {{end}}
 
-{{if $.Static}}<script>{{$.InlineJS}}</script>{{else}}<script src="/static/a11y.js"></script><script src="/static/pager.js"></script><script src="/static/session.js"></script>{{end}}
+{{if $.Static}}<script>{{$.InlineJS}}</script>{{else}}<script src="/static/a11y.js"></script><script src="/static/pager.js"></script><script src="/static/session.js"></script><script src="/static/finding-language.js"></script>{{end}}
 </main>
 </body>
 </html>

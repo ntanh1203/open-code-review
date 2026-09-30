@@ -3,6 +3,18 @@ SPDX-License-Identifier: Apache-2.0
 Copyright 2026 alibaba/open-code-review Contributors
 */
 
+.review-launcher { padding: 1.5rem; margin-bottom: 2rem; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+.review-launcher-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+#review-form { display: grid; grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr)) auto; gap: .5rem 1rem; align-items: end; }
+#review-form label { grid-row: 1; }
+#review-form input { grid-row: 2; min-width: 0; padding: .65rem; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--text); }
+.review-folder-field { grid-row: 2; display: flex; gap: .5rem; min-width: 0; }
+.review-folder-field input { flex: 1; }
+.review-folder-field button { flex-shrink: 0; }
+#review-form button { grid-row: 2; }
+#review-jobs { padding-left: 1.25rem; overflow-wrap: anywhere; }
+#review-jobs li { padding: .4rem 0; }
+@media (max-width: 800px) { #review-form { display: flex; flex-direction: column; align-items: stretch; } }
 
 :root {
     color-scheme: light dark;
