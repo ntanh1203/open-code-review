@@ -205,12 +205,11 @@
     };
     const showLLMConfig = config => {
         llmProviders = config.providers;
-        document.getElementById('llm-providers').replaceChildren(...llmProviders.map(p => {
-            const option = document.createElement('option');
-            option.value = p.name;
-            option.label = p.label;
-            return option;
-        }));
+        // Keep the configured provider selectable even if it is not in the list.
+        if (config.provider && !llmProviders.some(p => p.name === config.provider)) {
+            llmProviders.push({name: config.provider, label: 'custom', base_url: '', models: []});
+        }
+        llmField('provider').replaceChildren(...llmProviders.map(p => new Option(`${p.name} - ${p.label}`, p.name)));
         llmField('provider').value = savedProvider = config.provider;
         llmField('url').value = config.url;
         llmField('model').value = config.model;

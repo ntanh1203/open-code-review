@@ -46,7 +46,7 @@
         <form id="llm-config-form" class="review-form llm-config-form">
             <div class="review-field">
                 <label for="llm-provider" data-en="Provider">Provider</label>
-                <input id="llm-provider" name="provider" type="text" required list="llm-providers" autocomplete="off" spellcheck="false">
+                <select id="llm-provider" name="provider" required></select>
             </div>
             <div class="review-field">
                 <label for="llm-url" data-en="Base URL">Base URL</label>
@@ -60,7 +60,6 @@
                 <label for="llm-model" data-en="Model">Model</label>
                 <input id="llm-model" name="model" type="text" required list="llm-models" autocomplete="off" spellcheck="false">
             </div>
-            <datalist id="llm-providers"></datalist>
             <datalist id="llm-models"></datalist>
             <button type="submit" class="review-submit"><span data-en="Save settings">Save settings</span></button>
         </form>

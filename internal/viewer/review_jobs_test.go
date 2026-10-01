@@ -131,3 +131,26 @@ func TestReviewFormPresent(t *testing.T) {
 		}
 	}
 }
+
+func TestValidateReviewRequestFallsBackToOrigin(t *testing.T) {
+	repo := t.TempDir()
+	for _, args := range [][]string{{"init", repo}, {"-C", repo, "config", "core.hooksPath", "/dev/null"}, {"-C", repo, "commit", "--allow-empty", "-m", "initial"}, {"-C", repo, "branch", "remote-only"}, {"-C", repo, "remote", "add", "origin", repo}, {"-C", repo, "fetch", "origin"}, {"-C", repo, "branch", "-D", "remote-only"}} {
+		cmd := exec.Command("git", args...)
+		cmd.Env = append(os.Environ(), "GIT_AUTHOR_NAME=Test", "GIT_AUTHOR_EMAIL=test@example.com", "GIT_COMMITTER_NAME=Test", "GIT_COMMITTER_EMAIL=test@example.com")
+		if output, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("git: %v: %s", err, output)
+		}
+	}
+	root, err := filepath.EvalSymlinks(repo)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := reviewRequest{RepoDir: root, From: "HEAD", To: "remote-only"}
+	if err := validateReviewRequest(&req); err != nil || req.From != "HEAD" || req.To != "origin/remote-only" {
+		t.Fatalf("got %+v, %v", req, err)
+	}
+	req.To = "nowhere"
+	if err := validateReviewRequest(&req); err == nil {
+		t.Fatal("missing branch accepted")
+	}
+}

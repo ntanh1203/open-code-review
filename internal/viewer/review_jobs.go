@@ -211,15 +211,23 @@ func validateReviewRequest(req *reviewRequest) error {
 	if err != nil || strings.TrimSpace(string(root)) != path {
 		return errors.New("source folder must be a Git repository root")
 	}
-	for _, ref := range []string{req.From, req.To} {
-		if ref == "" || len(ref) > 256 || strings.HasPrefix(ref, "-") || strings.ContainsAny(ref, "\x00\n\r") {
+	for _, ref := range []*string{&req.From, &req.To} {
+		if *ref == "" || len(*ref) > 256 || strings.HasPrefix(*ref, "-") || strings.ContainsAny(*ref, "\x00\n\r") {
 			return errors.New("invalid branch name")
 		}
-		if err := exec.Command("git", "-C", path, "rev-parse", "--verify", "--end-of-options", ref+"^{commit}").Run(); err != nil {
-			return fmt.Errorf("branch not found: %s", ref)
+		if !isCommit(path, *ref) {
+			// A branch fetched but never checked out exists only as origin/<name>.
+			if !isCommit(path, "origin/"+*ref) {
+				return fmt.Errorf("branch not found: %s", *ref)
+			}
+			*ref = "origin/" + *ref
 		}
 	}
 	return nil
+}
+
+func isCommit(repo, ref string) bool {
+	return exec.Command("git", "-C", repo, "rev-parse", "--verify", "--end-of-options", ref+"^{commit}").Run() == nil
 }
 
 func (j *reviewJobs) execute(id string, req reviewRequest) {

@@ -2073,7 +2073,8 @@ nav.breadcrumb a:focus-visible {
     font-size: 0.8rem;
     font-weight: 500;
 }
-.review-field input {
+.review-field input,
+.review-field select {
     min-width: 0;
     height: 2.35rem;
     box-sizing: border-box;
@@ -2086,7 +2087,8 @@ nav.breadcrumb a:focus-visible {
     font-family: var(--mono);
     font-size: 0.85rem;
 }
-.review-field input:hover { border-color: var(--pagination-active-border); }
+.review-field input:hover,
+.review-field select:hover { border-color: var(--pagination-active-border); }
 .review-inline {
     display: flex;
     gap: var(--space-2);
@@ -2120,6 +2122,7 @@ nav.breadcrumb a:focus-visible {
 }
 .review-btn:disabled { opacity: 0.6; cursor: progress; }
 .review-field input:focus-visible,
+.review-field select:focus-visible,
 .lang-toggle button:focus-visible,
 .review-submit:focus-visible,
 .review-btn:focus-visible,
