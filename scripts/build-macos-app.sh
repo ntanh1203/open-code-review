@@ -20,9 +20,8 @@ rm -rf "$app"
 # browser, and Quit stops the viewer it started.
 # The login interactive shell restores PATH, git and OCR_LLM_* settings that
 # Finder does not pass to apps.
-# ponytail: assumes a POSIX login shell ($0); fish users need SHELL=/bin/zsh.
 osacompile -s -o "$app" <<'OSA'
-global viewerURL, viewerPid
+global viewerURL, viewerPid, bin
 
 on viewerUp()
   try
@@ -39,7 +38,7 @@ on run
   if not viewerUp() then
     set bin to POSIX path of (path to me) & "Contents/Resources/opencodereview"
     set logDir to POSIX path of (path to library folder from user domain) & "Logs/OpenCodeReview"
-    set viewerPid to do shell script "mkdir -p " & quoted form of logDir & "; \"${SHELL:-/bin/zsh}\" -lic 'exec \"$0\" viewer --open=never' " & quoted form of bin & " </dev/null >>" & quoted form of (logDir & "/viewer.log") & " 2>&1 & echo $!"
+    set viewerPid to do shell script "mkdir -p " & quoted form of logDir & "; \"${SHELL:-/bin/zsh}\" -lic " & quoted form of ("exec " & quoted form of bin & " viewer --open=never") & " </dev/null >>" & quoted form of (logDir & "/viewer.log") & " 2>&1 & echo $!"
     repeat 50 times
       if viewerUp() then exit repeat
       delay 0.2
@@ -58,7 +57,8 @@ on reopen
 end reopen
 
 on quit
-  if viewerPid is not "" then do shell script "kill " & viewerPid & " 2>/dev/null; true"
+  -- The viewer may have died and its PID been reused; only signal our own binary.
+  if viewerPid is not "" then do shell script "/bin/ps -p " & viewerPid & " -o command= | /usr/bin/grep -qF -- " & quoted form of bin & " && kill " & viewerPid & "; true"
   continue quit
 end quit
 OSA

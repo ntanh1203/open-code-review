@@ -82,11 +82,16 @@
         render();
     };
 
+    let lastJobs = '';
     async function loadJobs() {
         try {
             const response = await fetch('/api/reviews');
             if (!response.ok) throw new Error(response.statusText);
-            jobs = await response.json();
+            const body = await response.text();
+            // Rebuilding the list on every poll would drop keyboard focus from its links.
+            if (body === lastJobs) return;
+            lastJobs = body;
+            jobs = JSON.parse(body);
             render();
         } catch (_) {
             say('Could not load jobs', '', true);
@@ -180,7 +185,7 @@
     loadJobs();
     // ponytail: fixed 3s polling; switch to SSE if job counts grow large.
     setInterval(() => {
-        if (!document.hidden && jobs.some(job => job.status === 'queued' || job.status === 'running')) loadJobs();
+        if (!document.hidden) loadJobs();
     }, 3000);
     setInterval(() => {
         list.querySelectorAll('.review-job-time').forEach((node, i) => {
