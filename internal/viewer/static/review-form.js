@@ -29,7 +29,15 @@
         'Could not select folder': 'Kh\u00f4ng th\u1ec3 ch\u1ecdn th\u01b0 m\u1ee5c',
         'Fetch origin': 'T\u1ea3i nh\u00e1nh origin',
         'Could not fetch branches': 'Kh\u00f4ng t\u1ea3i \u0111\u01b0\u1ee3c nh\u00e1nh',
-        'Branches loaded': '\u0110\u00e3 t\u1ea3i danh s\u00e1ch nh\u00e1nh'
+        'Branches loaded': '\u0110\u00e3 t\u1ea3i danh s\u00e1ch nh\u00e1nh',
+        'LLM settings': 'C\u1ea5u h\u00ecnh LLM',
+        'Base URL': 'Base URL',
+        Model: 'Model',
+        'Save settings': 'L\u01b0u c\u1ea5u h\u00ecnh',
+        'Settings saved': '\u0110\u00e3 l\u01b0u c\u1ea5u h\u00ecnh',
+        'Could not save settings': 'Kh\u00f4ng l\u01b0u \u0111\u01b0\u1ee3c c\u1ea5u h\u00ecnh',
+        'Could not load settings': 'Kh\u00f4ng t\u1ea3i \u0111\u01b0\u1ee3c c\u1ea5u h\u00ecnh',
+        'Saved; leave empty to keep': '\u0110\u00e3 l\u01b0u; \u0111\u1ec3 tr\u1ed1ng \u0111\u1ec3 gi\u1eef nguy\u00ean'
     };
     let language = localStorage.getItem('ocr-viewer-language') === 'vi' ? 'vi' : 'en';
     let jobs = [];
@@ -179,6 +187,71 @@
         } finally {
             button.disabled = false;
         }
+    });
+
+    // ~/.opencodereview/config.json, the same file `ocr config` writes. The key
+    // never comes back from the server; an empty field keeps the stored one.
+    const llmForm = document.getElementById('llm-config-form');
+    const llmField = name => llmForm.elements[name];
+    let llmProviders = [];
+    const fillModels = () => {
+        const provider = llmProviders.find(p => p.name === llmField('provider').value);
+        document.getElementById('llm-models').replaceChildren(...(provider ? provider.models : []).map(model => {
+            const option = document.createElement('option');
+            option.value = model;
+            return option;
+        }));
+        llmField('url').placeholder = provider && provider.base_url ? provider.base_url : 'https://...';
+    };
+    const showLLMConfig = config => {
+        llmProviders = config.providers;
+        document.getElementById('llm-providers').replaceChildren(...llmProviders.map(p => {
+            const option = document.createElement('option');
+            option.value = p.name;
+            option.label = p.label;
+            return option;
+        }));
+        llmField('provider').value = savedProvider = config.provider;
+        llmField('url').value = config.url;
+        llmField('model').value = config.model;
+        llmField('api_key').value = '';
+        llmField('api_key').placeholder = config.key_set ? text('Saved; leave empty to keep') : '';
+        fillModels();
+    };
+    let savedProvider = '';
+    llmField('provider').addEventListener('input', () => {
+        // Another provider's endpoint and model would be saved under the new name.
+        if (llmField('provider').value !== savedProvider) {
+            llmField('url').value = '';
+            llmField('model').value = '';
+        }
+        fillModels();
+    });
+    const loadLLMConfig = async () => {
+        try {
+            const response = await fetch('/api/llm-config', {headers: {'X-Viewer-Token': panel.dataset.token}});
+            if (!response.ok) throw new Error((await response.text()).trim());
+            showLLMConfig(await response.json());
+        } catch (error) {
+            say('Could not load settings', error.message, true);
+        }
+    };
+    llmForm.addEventListener('submit', async event => {
+        event.preventDefault();
+        const button = llmForm.querySelector('.review-submit');
+        await busy(button, async () => {
+            try {
+                const response = await post('/api/llm-config', Object.fromEntries(new FormData(llmForm)));
+                if (!response.ok) throw new Error((await response.text()).trim());
+                showLLMConfig(await response.json());
+                say('Settings saved');
+            } catch (error) {
+                say('Could not save settings', error.message, true);
+            }
+        });
+    });
+    document.getElementById('llm-config').addEventListener('toggle', event => {
+        if (event.target.open) loadLLMConfig();
     });
 
     applyLanguage();

@@ -4,7 +4,6 @@
 package viewer
 
 import (
-	"bytes"
 	"context"
 	"embed"
 	"fmt"
@@ -19,7 +18,7 @@ import (
 	"time"
 )
 
-//go:embed templates/*.html static/style.css static/pager.js static/a11y.js static/session.js static/repos.js static/review-form.js static/finding-language.js static/sessions.js static/icons/*.svg
+//go:embed templates/*.html static/style.css static/pager.js static/a11y.js static/session.js static/repos.js static/review-form.js static/finding-language.js static/sessions.js static/share.js static/icons/*.svg
 var assets embed.FS
 
 // iconNameRE guards the icon() template helper: names are hard-coded in
@@ -127,6 +126,8 @@ func newMuxWithContext(root string, ctx context.Context) *http.ServeMux {
 	mux.HandleFunc("POST /api/pick-folder", jobs.pickFolder)
 	mux.HandleFunc("POST /api/branches", jobs.branches)
 	mux.HandleFunc("POST /api/translate", jobs.translateFinding)
+	mux.HandleFunc("GET /api/llm-config", jobs.llmConfig)
+	mux.HandleFunc("POST /api/llm-config", jobs.llmConfig)
 	mux.HandleFunc("GET /api/reviews", jobs.serve)
 	mux.HandleFunc("GET /api/reviews/{id}", jobs.serve)
 
@@ -154,21 +155,6 @@ func newMuxWithContext(root string, ctx context.Context) *http.ServeMux {
 			return
 		}
 		handleCompare(w, r, root, repo)
-	})
-	mux.HandleFunc("GET /r/{repo}/{sessionID}/export", func(w http.ResponseWriter, r *http.Request) {
-		repo, sid := r.PathValue("repo"), r.PathValue("sessionID")
-		if unsafeSegment(repo) || unsafeSegment(sid) {
-			http.Error(w, "invalid path", http.StatusBadRequest)
-			return
-		}
-		var buf bytes.Buffer
-		if err := ExportSession(&buf, root, repo, sid); err != nil {
-			http.Error(w, err.Error(), http.StatusNotFound)
-			return
-		}
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		w.Header().Set("Content-Disposition", `attachment; filename="review-`+sid+`.html"`)
-		_, _ = w.Write(buf.Bytes())
 	})
 	mux.HandleFunc("GET /r/{repo}/{sessionID}", func(w http.ResponseWriter, r *http.Request) {
 		repo := r.PathValue("repo")

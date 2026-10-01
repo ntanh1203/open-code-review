@@ -2109,7 +2109,6 @@ nav.breadcrumb a:focus-visible {
     transition: background var(--transition);
 }
 .review-btn:hover { background: var(--input-hover); }
-a.review-btn { display: inline-flex; align-items: center; text-decoration: none; }
 .share-actions {
     display: flex;
     flex-wrap: wrap;
@@ -2149,6 +2148,14 @@ a.review-btn { display: inline-flex; align-items: center; text-decoration: none;
 .review-form .review-submit { grid-column: 1 / -1; justify-self: start; }
 .review-submit:disabled { opacity: 0.6; cursor: progress; }
 .review-submit svg { width: 0.9rem; height: 0.9rem; }
+.llm-config { margin-top: var(--space-3); }
+.llm-config summary {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+}
+.llm-config-form { margin-top: var(--space-3); grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .review-message {
     min-height: 1.25rem;
     margin: var(--space-2) 0 0;
@@ -2230,6 +2237,7 @@ a.review-btn { display: inline-flex; align-items: center; text-decoration: none;
 @media (max-width: 800px) {
     .review-form { grid-template-columns: 1fr 1fr; }
     .review-field-repo { grid-column: 1 / -1; }
+    .llm-config-form { grid-template-columns: 1fr 1fr; }
 }
 @media (max-width: 480px) {
     .review-form { grid-template-columns: 1fr; }

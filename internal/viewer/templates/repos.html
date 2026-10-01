@@ -41,6 +41,30 @@
         <button type="submit" class="review-submit">{{icon "search"}}<span data-en="Review">Review</span></button>
     </form>
     <p id="review-message" class="review-message" role="status" aria-live="polite"></p>
+    <details class="llm-config" id="llm-config">
+        <summary data-en="LLM settings">LLM settings</summary>
+        <form id="llm-config-form" class="review-form llm-config-form">
+            <div class="review-field">
+                <label for="llm-provider" data-en="Provider">Provider</label>
+                <input id="llm-provider" name="provider" type="text" required list="llm-providers" autocomplete="off" spellcheck="false">
+            </div>
+            <div class="review-field">
+                <label for="llm-url" data-en="Base URL">Base URL</label>
+                <input id="llm-url" name="url" type="url" autocomplete="off" spellcheck="false">
+            </div>
+            <div class="review-field">
+                <label for="llm-key" data-en="API key">API key</label>
+                <input id="llm-key" name="api_key" type="password" autocomplete="new-password" spellcheck="false">
+            </div>
+            <div class="review-field">
+                <label for="llm-model" data-en="Model">Model</label>
+                <input id="llm-model" name="model" type="text" required list="llm-models" autocomplete="off" spellcheck="false">
+            </div>
+            <datalist id="llm-providers"></datalist>
+            <datalist id="llm-models"></datalist>
+            <button type="submit" class="review-submit"><span data-en="Save settings">Save settings</span></button>
+        </form>
+    </details>
     <h3 class="review-jobs-title" data-en="Review jobs">Review jobs</h3>
     <ul id="review-jobs" class="review-jobs"></ul>
     <p id="review-jobs-empty" class="review-jobs-empty" data-en="No reviews started yet">No reviews started yet</p>

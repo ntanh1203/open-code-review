@@ -364,6 +364,7 @@ func TestMux_HasNoWriteRoutes(t *testing.T) {
 		{"GET repo route still served", http.MethodGet, "/r/repo", http.StatusOK},
 		{"GET static asset still served", http.MethodGet, "/static/session.js", http.StatusOK},
 		{"GET sessions list script still served", http.MethodGet, "/static/sessions.js", http.StatusOK},
+		{"GET share script served", http.MethodGet, "/static/share.js", http.StatusOK},
 		{"POST to unknown write-looking path stays 404", http.MethodPost, "/r/repo/s1/marks", http.StatusNotFound},
 		{"GET unknown path stays 404", http.MethodGet, "/nope", http.StatusNotFound},
 	}
@@ -376,24 +377,5 @@ func TestMux_HasNoWriteRoutes(t *testing.T) {
 				t.Errorf("%s %s = %d, want %d", tt.method, tt.path, rr.Code, tt.want)
 			}
 		})
-	}
-}
-
-func TestMux_SessionExportDownload(t *testing.T) {
-	root := t.TempDir()
-	writeMarkIdentityFixture(t, root, "repo", "s1")
-	mux := newMux(root)
-
-	w := httptest.NewRecorder()
-	mux.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/r/repo/s1/export", nil))
-	if w.Code != http.StatusOK || !strings.Contains(w.Header().Get("Content-Disposition"), `filename="review-s1.html"`) || !strings.Contains(w.Body.String(), "<style>") {
-		t.Fatalf("export = %d %q", w.Code, w.Header().Get("Content-Disposition"))
-	}
-	for path, want := range map[string]int{"/r/repo/missing/export": http.StatusNotFound, "/r/..%2Frepo/s1/export": http.StatusBadRequest} {
-		w := httptest.NewRecorder()
-		mux.ServeHTTP(w, httptest.NewRequest(http.MethodGet, path, nil))
-		if w.Code != want {
-			t.Errorf("%s = %d, want %d", path, w.Code, want)
-		}
 	}
 }
