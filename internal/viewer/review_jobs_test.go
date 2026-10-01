@@ -67,7 +67,7 @@ func TestReviewJobsSecurityAndConcurrency(t *testing.T) {
 		jobs.mu.Lock()
 		completed := 0
 		for _, job := range jobs.items {
-			if job.Status == "completed" && job.SessionURL == "/r/test/session" {
+			if job.Status == "completed" && job.SessionURL == "/r/test/session" && job.Finished != nil {
 				completed++
 			}
 		}

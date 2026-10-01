@@ -4,6 +4,7 @@
 package viewer
 
 import (
+	"bytes"
 	"context"
 	"embed"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 	"io/fs"
 	"net"
 	"net/http"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -152,6 +154,21 @@ func newMuxWithContext(root string, ctx context.Context) *http.ServeMux {
 			return
 		}
 		handleCompare(w, r, root, repo)
+	})
+	mux.HandleFunc("GET /r/{repo}/{sessionID}/export", func(w http.ResponseWriter, r *http.Request) {
+		repo, sid := r.PathValue("repo"), r.PathValue("sessionID")
+		if unsafeSegment(repo) || unsafeSegment(sid) {
+			http.Error(w, "invalid path", http.StatusBadRequest)
+			return
+		}
+		var buf bytes.Buffer
+		if err := ExportSession(&buf, root, repo, sid); err != nil {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.Header().Set("Content-Disposition", `attachment; filename="review-`+sid+`.html"`)
+		_, _ = w.Write(buf.Bytes())
 	})
 	mux.HandleFunc("GET /r/{repo}/{sessionID}", func(w http.ResponseWriter, r *http.Request) {
 		repo := r.PathValue("repo")
@@ -345,6 +362,7 @@ func parseTemplate(name string) (*template.Template, error) {
 		"truncate":       truncateText,
 		"formatNumber":   formatNumber,
 		"icon":           inlineIcon,
+		"base":           filepath.Base,
 		"dict":           dictKV,
 		"add":            func(a, b int) int { return a + b },
 		"countLabel": func(n int, singular, plural string) string {

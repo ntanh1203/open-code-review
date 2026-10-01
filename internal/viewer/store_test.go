@@ -233,6 +233,25 @@ func TestDiscoverRepos_FindsRepos(t *testing.T) {
 	}
 }
 
+func TestDiscoverReposReadsPathFromNewestSession(t *testing.T) {
+	root := t.TempDir()
+	repo := filepath.Join(root, "Users-me-proj")
+	if err := os.MkdirAll(repo, 0755); err != nil {
+		t.Fatal(err)
+	}
+	writeJSONL(t, filepath.Join(repo, "a.jsonl"), `{"type":"session_start","cwd":"/Users/me/proj"}`)
+	repos, err := DiscoverRepos(root)
+	if err != nil || len(repos) != 1 {
+		t.Fatalf("repos = %v, err = %v", repos, err)
+	}
+	if repos[0].Path != "/Users/me/proj" {
+		t.Errorf("Path = %q, want /Users/me/proj", repos[0].Path)
+	}
+	if got := sessionCWD(filepath.Join(repo, "missing.jsonl")); got != "" {
+		t.Errorf("missing file cwd = %q, want empty", got)
+	}
+}
+
 func TestDiscoverRepos_SkipsDirsWithNoJSONL(t *testing.T) {
 	root := t.TempDir()
 	emptyRepo := filepath.Join(root, "empty-repo")

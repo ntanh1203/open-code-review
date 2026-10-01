@@ -7,18 +7,20 @@
     const form = document.getElementById('review-form');
     const message = document.getElementById('review-message');
     const list = document.getElementById('review-jobs');
+    const empty = document.getElementById('review-jobs-empty');
     const toggle = document.getElementById('review-language');
-    const pickFolder = document.getElementById('review-pick-folder');
-    const fetchBranches = document.getElementById('review-fetch-branches');
-    const translations = {
+    // Escaped so the source stays ASCII (make english-check).
+    const vi = {
         'Start a review': 'B\u1eaft \u0111\u1ea7u review',
         'Source folder': 'Th\u01b0 m\u1ee5c source',
         'Base branch': 'Nh\u00e1nh \u0111\u1ed1i chi\u1ebfu',
         'Review branch': 'Nh\u00e1nh c\u1ea7n review',
         'Review jobs': 'C\u00e1c l\u01b0\u1ee3t review',
-        'Review': 'Review',
-        queued: '\u0110ang ch\u1edd', running: '\u0110ang review',
-        completed: 'Ho\u00e0n t\u1ea5t', failed: 'Th\u1ea5t b\u1ea1i',
+        'No reviews started yet': 'Ch\u01b0a c\u00f3 l\u01b0\u1ee3t review n\u00e0o',
+        queued: '\u0110ang ch\u1edd',
+        running: '\u0110ang review',
+        completed: 'Ho\u00e0n t\u1ea5t',
+        failed: 'Th\u1ea5t b\u1ea1i',
         'Open result': 'Xem k\u1ebft qu\u1ea3',
         'Could not load jobs': 'Kh\u00f4ng t\u1ea3i \u0111\u01b0\u1ee3c danh s\u00e1ch',
         'Review could not start': 'Kh\u00f4ng th\u1ec3 b\u1eaft \u0111\u1ea7u review',
@@ -30,99 +32,159 @@
         'Branches loaded': '\u0110\u00e3 t\u1ea3i danh s\u00e1ch nh\u00e1nh'
     };
     let language = localStorage.getItem('ocr-viewer-language') === 'vi' ? 'vi' : 'en';
-    const text = key => language === 'vi' ? (translations[key] || key) : key;
-    const applyLanguage = () => {
-        panel.querySelectorAll('[data-en]').forEach(el => { el.textContent = text(el.dataset.en); });
-        toggle.setAttribute('aria-label', language === 'vi' ? 'Switch to English' : 'Switch to Vietnamese');
-        toggle.setAttribute('aria-pressed', String(language === 'vi'));
-        loadJobs();
+    let jobs = [];
+    const text = key => (language === 'vi' && vi[key]) || key;
+
+    const say = (key, detail, isError) => {
+        message.textContent = detail ? `${text(key)}: ${detail}` : text(key);
+        message.classList.toggle('is-error', Boolean(isError));
     };
-    toggle.addEventListener('click', () => {
-        language = language === 'en' ? 'vi' : 'en';
-        localStorage.setItem('ocr-viewer-language', language);
-        applyLanguage();
-    });
+
+    const elapsed = job => {
+        const end = job.finished ? new Date(job.finished) : new Date();
+        const seconds = Math.max(0, Math.round((end - new Date(job.started)) / 1000));
+        const m = Math.floor(seconds / 60);
+        return m ? `${m}m ${String(seconds % 60).padStart(2, '0')}s` : `${seconds}s`;
+    };
+
+    const el = (tag, className, content) => {
+        const node = document.createElement(tag);
+        if (className) node.className = className;
+        if (content !== undefined) node.textContent = content;
+        return node;
+    };
+
+    const render = () => {
+        list.replaceChildren(...jobs.map(job => {
+            const item = el('li', 'review-job');
+            const main = el('div', 'review-job-main');
+            const repo = el('span', 'review-job-repo', job.repo_dir.split('/').filter(Boolean).pop() || job.repo_dir);
+            repo.title = job.repo_dir;
+            main.append(repo, el('span', 'review-job-refs', `${job.from} \u2192 ${job.to}`));
+            if (job.error) main.append(el('span', 'review-job-error', job.error));
+            item.append(el('span', `review-job-status status-${job.status}`, text(job.status)), main, el('span', 'review-job-time', elapsed(job)));
+            if (job.session_url) {
+                const link = el('a', '', text('Open result'));
+                link.href = job.session_url;
+                item.append(link);
+            }
+            return item;
+        }));
+        empty.hidden = jobs.length > 0;
+    };
+
+    const applyLanguage = () => {
+        document.documentElement.lang = language;
+        panel.querySelectorAll('[data-en]').forEach(node => { node.textContent = text(node.dataset.en); });
+        toggle.querySelectorAll('button').forEach(button => {
+            button.setAttribute('aria-pressed', String(button.dataset.lang === language));
+        });
+        render();
+    };
+
     async function loadJobs() {
         try {
             const response = await fetch('/api/reviews');
-            if (!response.ok) throw new Error();
-            const jobs = await response.json();
-            list.replaceChildren();
-            for (const job of jobs) {
-                const item = document.createElement('li');
-                item.textContent = `${job.repo_dir}: ${job.from} / ${job.to} - ${text(job.status)}`;
-                if (job.error) item.append(document.createTextNode(`: ${job.error}`));
-                if (job.session_url) {
-                    const link = document.createElement('a');
-                    link.href = job.session_url;
-                    link.textContent = text('Open result');
-                    item.append(' ', link);
-                }
-                list.append(item);
-            }
+            if (!response.ok) throw new Error(response.statusText);
+            jobs = await response.json();
+            render();
         } catch (_) {
-            message.textContent = text('Could not load jobs');
+            say('Could not load jobs', '', true);
         }
     }
-    pickFolder.addEventListener('click', async () => {
-        pickFolder.disabled = true;
-        try {
-            const response = await fetch('/api/pick-folder', {
-                method: 'POST', headers: {'X-Viewer-Token': panel.dataset.token}
-            });
-            if (!response.ok) throw new Error(await response.text());
-            document.getElementById('review-repo').value = (await response.json()).path;
-        } catch (error) {
-            message.textContent = `${text('Could not select folder')}: ${error.message}`;
-        } finally {
-            pickFolder.disabled = false;
-        }
+
+    toggle.addEventListener('click', event => {
+        const button = event.target.closest('button[data-lang]');
+        if (!button || button.dataset.lang === language) return;
+        language = button.dataset.lang;
+        localStorage.setItem('ocr-viewer-language', language);
+        applyLanguage();
     });
-    fetchBranches.addEventListener('click', async () => {
-        fetchBranches.disabled = true;
+
+    // Source folder and base branch survive navigation; the review branch changes per review.
+    const remembered = ['review-repo', 'review-from'];
+    remembered.forEach(id => {
+        const value = localStorage.getItem(`ocr-viewer-${id}`);
+        if (value) document.getElementById(id).value = value;
+    });
+    const remember = () => remembered.forEach(id => localStorage.setItem(`ocr-viewer-${id}`, document.getElementById(id).value));
+    form.addEventListener('input', remember);
+
+    const post = (url, body) => fetch(url, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-Viewer-Token': panel.dataset.token},
+        body: body === undefined ? undefined : JSON.stringify(body)
+    });
+
+    const busy = async (button, work) => {
+        button.disabled = true;
         try {
-            const response = await fetch('/api/branches', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json', 'X-Viewer-Token': panel.dataset.token},
-                body: JSON.stringify({repo_dir: document.getElementById('review-repo').value})
-            });
-            if (!response.ok) throw new Error(await response.text());
+            await work();
+        } finally {
+            button.disabled = false;
+        }
+    };
+
+    const pickFolder = document.getElementById('review-pick-folder');
+    pickFolder.addEventListener('click', () => busy(pickFolder, async () => {
+        try {
+            const response = await post('/api/pick-folder');
+            if (!response.ok) throw new Error((await response.text()).trim());
+            document.getElementById('review-repo').value = (await response.json()).path;
+            remember();
+            say('');
+            document.getElementById('review-fetch-branches').click();
+        } catch (error) {
+            say('Could not select folder', error.message, true);
+        }
+    }));
+
+    const fetchBranches = document.getElementById('review-fetch-branches');
+    fetchBranches.addEventListener('click', () => busy(fetchBranches, async () => {
+        try {
+            const response = await post('/api/branches', {repo_dir: document.getElementById('review-repo').value});
+            if (!response.ok) throw new Error((await response.text()).trim());
             const branches = await response.json();
-            const options = document.getElementById('origin-branches');
-            options.replaceChildren(...branches.map(branch => {
+            document.getElementById('origin-branches').replaceChildren(...branches.map(branch => {
                 const option = document.createElement('option');
                 option.value = branch;
                 return option;
             }));
-            if (branches.includes('origin/develop') && document.getElementById('review-from').value === 'develop') {
-                document.getElementById('review-from').value = 'origin/develop';
-            }
-            message.textContent = `${text('Branches loaded')}: ${branches.length}`;
+            const from = document.getElementById('review-from');
+            if (branches.includes('origin/develop') && from.value === 'develop') from.value = 'origin/develop';
+            remember();
+            say('Branches loaded', String(branches.length));
         } catch (error) {
-            message.textContent = `${text('Could not fetch branches')}: ${error.message}`;
-        } finally {
-            fetchBranches.disabled = false;
+            say('Could not fetch branches', error.message, true);
         }
-    });
+    }));
+
     form.addEventListener('submit', async event => {
         event.preventDefault();
-        const button = form.querySelector('button[type="submit"]');
+        const button = form.querySelector('.review-submit');
         button.disabled = true;
         try {
-            const response = await fetch('/api/reviews', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json', 'X-Viewer-Token': panel.dataset.token},
-                body: JSON.stringify(Object.fromEntries(new FormData(form)))
-            });
-            if (!response.ok) throw new Error(await response.text());
-            message.textContent = text('Review queued');
+            const response = await post('/api/reviews', Object.fromEntries(new FormData(form)));
+            if (!response.ok) throw new Error((await response.text()).trim());
+            say('Review queued');
+            document.getElementById('review-to').value = '';
             await loadJobs();
         } catch (error) {
-            message.textContent = `${text('Review could not start')}: ${error.message}`;
+            say('Review could not start', error.message, true);
         } finally {
             button.disabled = false;
         }
     });
+
     applyLanguage();
-    setInterval(loadJobs, 3000);
+    loadJobs();
+    // ponytail: fixed 3s polling; switch to SSE if job counts grow large.
+    setInterval(() => {
+        if (!document.hidden && jobs.some(job => job.status === 'queued' || job.status === 'running')) loadJobs();
+    }, 3000);
+    setInterval(() => {
+        list.querySelectorAll('.review-job-time').forEach((node, i) => {
+            if (jobs[i] && !jobs[i].finished) node.textContent = elapsed(jobs[i]);
+        });
+    }, 1000);
 })();

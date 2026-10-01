@@ -37,6 +37,7 @@ func SessionsRoot() (string, error) {
 // RepoInfo represents a discovered repository from the sessions directory.
 type RepoInfo struct {
 	EncodedPath  string // encoded directory name on disk
+	Path         string // working directory recorded by the newest session
 	SessionCount int
 	LastModified time.Time
 }
@@ -58,6 +59,7 @@ func DiscoverRepos(root string) ([]RepoInfo, error) {
 		}
 		repoDir := filepath.Join(root, e.Name())
 		info := RepoInfo{EncodedPath: e.Name()}
+		newest := ""
 
 		subEntries, err := os.ReadDir(repoDir)
 		if err != nil {
@@ -69,11 +71,15 @@ func DiscoverRepos(root string) ([]RepoInfo, error) {
 				if fi, err := se.Info(); err == nil {
 					if fi.ModTime().After(info.LastModified) {
 						info.LastModified = fi.ModTime()
+						newest = se.Name()
 					}
 				}
 			}
 		}
 		if info.SessionCount > 0 {
+			if newest != "" {
+				info.Path = sessionCWD(filepath.Join(repoDir, newest))
+			}
 			repos = append(repos, info)
 		}
 	}
@@ -82,6 +88,22 @@ func DiscoverRepos(root string) ([]RepoInfo, error) {
 		return repos[i].LastModified.After(repos[j].LastModified)
 	})
 	return repos, nil
+}
+
+// sessionCWD returns the cwd of a session's first record. The encoded
+// directory name cannot be decoded back because it flattens separators.
+func sessionCWD(path string) string {
+	f, err := os.Open(path) //nolint:gosec // path comes from os.ReadDir under the sessions root
+	if err != nil {
+		return ""
+	}
+	defer f.Close()
+	line, _ := bufio.NewReader(f).ReadBytes('\n')
+	var rec struct {
+		CWD string `json:"cwd"`
+	}
+	_ = json.Unmarshal(line, &rec)
+	return rec.CWD
 }
 
 // SessionSummary is built from session_start and session_end records.

@@ -26,14 +26,15 @@ import (
 )
 
 type reviewJob struct {
-	ID         string    `json:"id"`
-	RepoDir    string    `json:"repo_dir"`
-	From       string    `json:"from"`
-	To         string    `json:"to"`
-	Status     string    `json:"status"`
-	Error      string    `json:"error,omitempty"`
-	SessionURL string    `json:"session_url,omitempty"`
-	Started    time.Time `json:"started"`
+	ID         string     `json:"id"`
+	RepoDir    string     `json:"repo_dir"`
+	From       string     `json:"from"`
+	To         string     `json:"to"`
+	Status     string     `json:"status"`
+	Error      string     `json:"error,omitempty"`
+	SessionURL string     `json:"session_url,omitempty"`
+	Started    time.Time  `json:"started"`
+	Finished   *time.Time `json:"finished,omitempty"`
 }
 
 type reviewRequest struct {
@@ -236,6 +237,8 @@ func (j *reviewJobs) execute(id string, req reviewRequest) {
 	link, err := j.run(j.ctx, req)
 	j.mu.Lock()
 	job = j.items[id]
+	now := time.Now()
+	job.Finished = &now
 	if err != nil {
 		job.Status = "failed"
 		job.Error = err.Error()

@@ -11,20 +11,39 @@
 {{template "app-header" .}}
 <main class="repos-page">
 <section class="review-launcher" aria-labelledby="review-title" data-token="{{.ViewerToken}}">
-    <div class="review-launcher-heading"><h2 id="review-title" data-en="Start a review">Start a review</h2><button type="button" id="review-language" aria-label="Switch language">EN / VI</button></div>
-    <form id="review-form">
-        <label for="review-repo" data-en="Source folder" >Source folder</label>
-        <div class="review-folder-field"><input id="review-repo" name="repo_dir" type="text" required placeholder="/Users/lee/Work/project" autocomplete="off"><button id="review-pick-folder" type="button" data-en="Choose folder">Choose folder</button></div>
-        <label for="review-from" data-en="Base branch" >Base branch</label>
-        <input id="review-from" name="from" type="text" required value="develop" list="origin-branches" autocomplete="off">
-        <label for="review-to" data-en="Review branch" >Review branch</label>
-        <input id="review-to" name="to" type="text" required list="origin-branches" autocomplete="off"><button id="review-fetch-branches" type="button" data-en="Fetch origin">Fetch origin</button>
+    <div class="review-launcher-heading">
+        <h2 id="review-title" data-en="Start a review">Start a review</h2>
+        <div id="review-language" class="lang-toggle" role="group" aria-label="Language">
+            <button type="button" data-lang="en" aria-pressed="true">EN</button>
+            <button type="button" data-lang="vi" aria-pressed="false">VI</button>
+        </div>
+    </div>
+    <form id="review-form" class="review-form">
+        <div class="review-field review-field-repo">
+            <label for="review-repo" data-en="Source folder">Source folder</label>
+            <div class="review-inline">
+                <input id="review-repo" name="repo_dir" type="text" required placeholder="/path/to/repository" autocomplete="off" spellcheck="false">
+                <button id="review-pick-folder" class="review-btn" type="button" data-en="Choose folder">Choose folder</button>
+            </div>
+        </div>
+        <div class="review-field">
+            <label for="review-from" data-en="Base branch">Base branch</label>
+            <input id="review-from" name="from" type="text" required value="develop" list="origin-branches" autocomplete="off" spellcheck="false">
+        </div>
+        <div class="review-field">
+            <label for="review-to" data-en="Review branch">Review branch</label>
+            <div class="review-inline">
+                <input id="review-to" name="to" type="text" required list="origin-branches" placeholder="feature/..." autocomplete="off" spellcheck="false">
+                <button id="review-fetch-branches" class="review-btn" type="button" data-en="Fetch origin">Fetch origin</button>
+            </div>
+        </div>
         <datalist id="origin-branches"></datalist>
-        <button type="submit" data-en="Review" >Review</button>
+        <button type="submit" class="review-submit">{{icon "search"}}<span data-en="Review">Review</span></button>
     </form>
-    <p id="review-message" role="status" aria-live="polite"></p>
-    <h3 data-en="Review jobs" >Review jobs</h3>
-    <ul id="review-jobs" aria-live="polite"></ul>
+    <p id="review-message" class="review-message" role="status" aria-live="polite"></p>
+    <h3 class="review-jobs-title" data-en="Review jobs">Review jobs</h3>
+    <ul id="review-jobs" class="review-jobs"></ul>
+    <p id="review-jobs-empty" class="review-jobs-empty" data-en="No reviews started yet">No reviews started yet</p>
 </section>
 <script src="/static/review-form.js" defer></script>
 <div class="page-heading">
@@ -46,7 +65,7 @@
     <tbody>
     {{range .Repos}}
         <tr>
-            <td class="col-repository" data-repository-name><a href="/r/{{.EncodedPath}}">{{.EncodedPath}}</a></td>
+            <td class="col-repository" data-repository-name>{{if .Path}}<a href="/r/{{.EncodedPath}}">{{base .Path}}</a><span class="repo-path">{{.Path}}</span>{{else}}<a href="/r/{{.EncodedPath}}">{{.EncodedPath}}</a>{{end}}</td>
             <td class="col-sessions">{{.SessionCount}}</td>
             <td class="col-modified">{{formatTime .LastModified}}</td>
             <td class="col-action"><a class="repo-check" href="/r/{{.EncodedPath}}">Check</a></td>

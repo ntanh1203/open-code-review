@@ -378,3 +378,22 @@ func TestMux_HasNoWriteRoutes(t *testing.T) {
 		})
 	}
 }
+
+func TestMux_SessionExportDownload(t *testing.T) {
+	root := t.TempDir()
+	writeMarkIdentityFixture(t, root, "repo", "s1")
+	mux := newMux(root)
+
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/r/repo/s1/export", nil))
+	if w.Code != http.StatusOK || !strings.Contains(w.Header().Get("Content-Disposition"), `filename="review-s1.html"`) || !strings.Contains(w.Body.String(), "<style>") {
+		t.Fatalf("export = %d %q", w.Code, w.Header().Get("Content-Disposition"))
+	}
+	for path, want := range map[string]int{"/r/repo/missing/export": http.StatusNotFound, "/r/..%2Frepo/s1/export": http.StatusBadRequest} {
+		w := httptest.NewRecorder()
+		mux.ServeHTTP(w, httptest.NewRequest(http.MethodGet, path, nil))
+		if w.Code != want {
+			t.Errorf("%s = %d, want %d", path, w.Code, want)
+		}
+	}
+}

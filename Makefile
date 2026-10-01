@@ -2,7 +2,7 @@
 	build-all dist sha256sum version-info \
 	build-linux-amd64 build-linux-arm64 build-darwin-amd64 build-darwin-arm64 \
 	build-windows-amd64 build-windows-arm64 \
-	license-check license-add english-check
+	license-check license-add english-check app
 
 BINARY_NAME := opencodereview
 GO          := go
@@ -58,6 +58,11 @@ coverage:
 
 clean:
 	rm -rf $(DIST_DIR) coverage.out
+
+# macOS only: double-clickable app that starts the viewer and opens the browser.
+app: build
+	@test "$$(uname -s)" = Darwin || { echo "app target requires macOS" >&2; exit 1; }
+	./scripts/build-macos-app.sh $(DIST_DIR)/$(BINARY_NAME) "$(DIST_DIR)/Open Code Review.app" $(VERSION)
 
 run: build
 	$(DIST_DIR)/$(BINARY_NAME)$(EXE) --staged

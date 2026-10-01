@@ -867,7 +867,7 @@ func TestRenderTemplate_FilesReviewedUseFileIcon(t *testing.T) {
 func TestRenderTemplate_ReposTableMockup(t *testing.T) {
 	rr := httptest.NewRecorder()
 	renderTemplate(rr, "repos.html", map[string]any{
-		"Repos": []RepoInfo{{EncodedPath: "my-project", SessionCount: 3}},
+		"Repos": []RepoInfo{{EncodedPath: "my-project", SessionCount: 3}, {EncodedPath: "Users-me-app", Path: "/Users/me/app", SessionCount: 1}},
 	})
 	if rr.Code != http.StatusOK {
 		t.Errorf("status = %d, want 200", rr.Code)
@@ -879,6 +879,7 @@ func TestRenderTemplate_ReposTableMockup(t *testing.T) {
 		`<th scope="col" class="col-action">Action</th>`,
 		`<a class="repo-check" href="/r/my-project">Check</a>`,
 		`<td class="col-repository" data-repository-name><a href="/r/my-project">my-project</a></td>`,
+		`<a href="/r/Users-me-app">app</a><span class="repo-path">/Users/me/app</span>`,
 		`aria-label="Previous page"><svg`,
 		`aria-label="Next page"><svg`,
 		`<nav id="repos-pagination" class="pagination" aria-label="Repository pages" hidden>`,
